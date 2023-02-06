@@ -1,4 +1,4 @@
-import { createAction, createReducer, current, nanoid } from '@reduxjs/toolkit'
+import { createAction, createReducer, createSlice, current, nanoid, PayloadAction } from '@reduxjs/toolkit'
 import { initalPostList } from '../../constants/blog'
 import { Post } from '../../types/blog.type'
 
@@ -6,42 +6,29 @@ interface BlogState {
     postList: Post[]
     editingPost: Post | null
 }
-const initalState: BlogState = {
+const initialState: BlogState = {
     postList: initalPostList,
     editingPost: null,
 }
-export const addPost = createAction('blog/addPost', function (post: Omit<Post, 'id'>) {
-    return {
-        payload: {
-            ...post,
-            id: nanoid(),
-        },
-    }
-})
-export const deletePost = createAction<string>('/blog/deletePost')
-export const startEditingPost = createAction<string>('/blog/startEditingPost')
-export const cancelEditingPost = createAction('/blog/cancelEditingPost')
-export const finishEditingPost = createAction<Post>('/blog/finishEditingPost')
-const blogReducer = createReducer(initalState, (builder) => {
-    builder
-        .addCase(addPost, (state, action) => {
-            const post = action.payload
-            state.postList.push(post)
-        })
-        .addCase(deletePost, (state, action) => {
+
+const blogSlice = createSlice({
+    name: 'AAAA',
+    initialState,
+    reducers: {
+        deletePost: (state, action: PayloadAction<string>) => {
             const foundPostIndex = state.postList.findIndex((post) => post.id === action.payload)
             if (foundPostIndex !== -1) {
                 state.postList.splice(foundPostIndex, 1)
             }
-        })
-        .addCase(startEditingPost, (state, action) => {
+        },
+        startEditingPost: (state, action: PayloadAction<string>) => {
             const foundPost = state.postList.find((post) => post.id === action.payload) || null
             state.editingPost = foundPost
-        })
-        .addCase(cancelEditingPost, (state, action) => {
+        },
+        cancelEditingPost: (state) => {
             state.editingPost = null
-        })
-        .addCase(finishEditingPost, (state, action) => {
+        },
+        finishEditingPost: (state, action: PayloadAction<Post>) => {
             const postId = action.payload.id
             state.postList.some((post, index) => {
                 if (post.id === postId) {
@@ -51,12 +38,33 @@ const blogReducer = createReducer(initalState, (builder) => {
                 return false
             })
             state.editingPost = null
-        })
-        .addMatcher(
-            (action) => action.type.indexOf('blog') === 0,
-            (state, action) => {
-                console.log('hello', current(state))
+        },
+        addPost: {
+            reducer: (state, action: PayloadAction<Post>) => {
+                const post = action.payload
+                state.postList.push(post)
             },
-        )
+            prepare: (post: Omit<Post, 'id'>) => ({
+                payload: {
+                    ...post,
+                    id: nanoid(),
+                },
+            }),
+        },
+    },
+    extraReducers(builder) {
+        builder
+            .addMatcher(
+                (action) => action.type.includes('hihi'),
+                (state, action) => {
+                    console.log('matcher case')
+                },
+            )
+            .addDefaultCase(() => {
+                console.log('default case')
+            })
+    },
 })
-export default blogReducer
+
+export const { deletePost, startEditingPost, cancelEditingPost, finishEditingPost, addPost } = blogSlice.actions
+export default blogSlice.reducer
