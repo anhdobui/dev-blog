@@ -1,11 +1,21 @@
-import { useDispatch, useSelector } from 'react-redux'
-import { deletePost } from '../../blog.reducer'
+import { useEffect } from 'react'
+import { useSelector } from 'react-redux'
+import { deletePost, getPostList } from '../../blog.reducer'
 import PostItem from '../PostItem'
-import { RootState } from './../../../../store'
+import Skeleton from '../Skeleton'
+import { RootState, useAppDispatch } from './../../../../store'
 import { startEditingPost } from './../../blog.reducer'
 function PostList() {
     const postList = useSelector((state: RootState) => state.blog.postList)
-    const dispatch = useDispatch()
+    const loading = useSelector((state: RootState) => state.blog.loading)
+    const dispatch = useAppDispatch()
+
+    useEffect(() => {
+        const promise = dispatch(getPostList())
+        return () => {
+            promise.abort()
+        }
+    }, [dispatch])
     const handleDeletePost = (postId: string) => {
         dispatch(deletePost(postId))
     }
@@ -25,14 +35,21 @@ function PostList() {
                         </p>
                     </div>
                     <div className="grid gap-4 sm:grid-cols-2 md:gap-6 lg:grid-cols-2 xl:grid-cols-2 xl:gap-8">
-                        {postList.map((post) => (
-                            <PostItem
-                                key={post.id}
-                                post={post}
-                                handleDeletePost={handleDeletePost}
-                                handleStartEditingPost={handleStartEditingPost}
-                            />
-                        ))}
+                        {loading && (
+                            <>
+                                <Skeleton />
+                                <Skeleton />
+                            </>
+                        )}
+                        {!loading &&
+                            postList.map((post) => (
+                                <PostItem
+                                    key={post.id}
+                                    post={post}
+                                    handleDeletePost={handleDeletePost}
+                                    handleStartEditingPost={handleStartEditingPost}
+                                />
+                            ))}
                     </div>
                 </div>
             </div>
